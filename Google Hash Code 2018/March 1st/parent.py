@@ -25,11 +25,23 @@ class Ride():
         pass
 
 
+class Car():
+
+    def __init__(self, x, y):
+        self.position = Coordinate(x, y)
+
+    def __str__(self):
+        return str(self.position)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    rides = []
+    cars = []
     with open("a_example.in") as f:
         R, C, F, N, B, T = list(map(int, f.readline().split(" ")))
-        rides = []
         for j, line in enumerate(f):
             rides.append(Ride(*line.rstrip().split(" ")))
-        print rides
+
+    for i in xrange(F):
+        cars.append(Car(0, 0))
