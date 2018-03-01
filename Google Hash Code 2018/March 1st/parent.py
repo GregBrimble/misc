@@ -20,7 +20,11 @@ class Ride():
         self.finish = Coordinate(x, y)
         self.earliest_start = s
         self.latest_finish = f
+        self.started_at = None
         self.done = False
+
+    def __str__(self):
+        return "{start} -> {finish}".format(start=self.start, finish=self.finish)
 
     def distance(self):
         return manhattanDist(self.start, self.finish)
@@ -35,9 +39,13 @@ class Car():
     def __str__(self):
         return str(self.position)
 
-    def remaining_distance(self):
+    def assign_ride(self, timeStep, ride, distance):
+        self.ride = ride
+        self.ride.started_at = timeStep + distance
+
+    def remaining_distance(self, timeStep):
         try:
-            return manhattanDist(self.position, self.ride.finish)
+            return self.ride.distance() + self.ride.started_at - timeStep
         except AttributeError:
             return 0
 
@@ -46,29 +54,35 @@ def manhattanDist(start, finish):
     return sum([start.row, start.column, finish.row, finish.column])
 
 
-def step(rides, cars, timeStep, submission):
+def step(rides, cars, timeStep, submissions):
+
+    distances = {}
 
     for ride in rides:
         if ride.done:
             break
 
-        distances = {}
-
         for car in cars:
             if car.ride:
-                distances[car] = car.remaining_distance() + manhattanDist(car.ride.finish, ride.start)
+                distances[car] = car.remaining_distance(timeStep) + manhattanDist(car.ride.finish, ride.start)
             else:
                 distances[car] = manhattanDist(car.position, ride.start)
 
         nearest_car = min(distances, key=distances.get)
 
-        if ride.latest_finish > (timeStep + ride.distance() + manhattanDist(nearest_car.position, ride.start)):
+        if ride.latest_finish < (timeStep + ride.distance() + distances[nearest_car]):
             ride.done = True
             break
 
 
-    for car in cars:
+        nearest_car.assign_ride(timeStep, ride, distances[nearest_car])
 
+
+    for car in cars:
+        if car.remaining_distance(timeStep) == 0 and car.ride:
+            car.position = car.ride.finish
+            car.ride = None
+            submissions[car].append(ride)
 
 
 if __name__ == "__main__":
@@ -84,5 +98,11 @@ if __name__ == "__main__":
     for i in xrange(F):
         cars.append(Car(0, 0))
 
+    for car in cars:
+        submission[car] = []
+
     for i in xrange(T):
         step(rides, cars, i, submission)
+
+    for item in submission.values():
+        print(item)
