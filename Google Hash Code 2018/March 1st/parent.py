@@ -75,8 +75,9 @@ def step(rides, cars, timeStep, submissions):
             break
 
 
-        nearest_car.assign_ride(timeStep, ride, distances[nearest_car])
-        print("assigning", nearest_car, ride)
+        if not nearest_car.ride:
+            nearest_car.assign_ride(timeStep, ride, distances[nearest_car])
+            print("assigning", nearest_car, ride)
 
     for i, car in enumerate(cars):
         if car.remaining_distance(timeStep) == 0 and car.ride:
