@@ -2,6 +2,7 @@ from collections import Counter
 from itertools import chain
 import logging
 import sys
+import math
 
 
 class Slice:
@@ -10,6 +11,10 @@ class Slice:
 
     def __init__(self, y1=None, x1=None, y2=None, x2=None):
         self.set_all(y1, x1, y2, x2)
+        assert self.size() < 6
+
+    def __str__(self):
+        return "{},{} - {},{}".format(self.y1, self.x1, self.y2, self.x2)
 
     def set_y1(self, y1):
         if self.y2:
@@ -53,6 +58,8 @@ class Slice:
         self.set_y2(y2)
         self.set_x2(x2)
 
+
+<< << << < HEAD: Google Hash Code 2018 / Practice Problem / program.py
     def location_in_slice(self, y, x):
         return (self.y1 <= y <= self.y2 and self.x1 <= x <= self.x2)
 
@@ -64,6 +71,12 @@ class Cell:
 
     def __init__(self, ingredient):
         self.ingredient = ingredient
+
+
+== == == =
+    def size(self):
+        return (self.y2 - self.y1) * (self.x2 - self.x1)
+>>>>>> > c73ea708bcfe920e31d4b2305ed7d885bf552cfe: Google Hash Code 2018 / program.py
 
 
 class Pizza:
@@ -85,8 +98,7 @@ class Pizza:
         with open(file_name, 'r') as f:
             r, c, self.l, self.h = list(map(int, f.readline().split(" ")))
             for j, line in enumerate(f):
-                self.matrix.append([Cell(ingredient)
-                                    for ingredient in list(line)[:-1]])
+                self.matrix.append(list(line)[:-1])
 
         logging.info("Loaded.")
 
@@ -180,8 +192,7 @@ class Pizza:
 
     def bin_count(self):
         logging.info("Calculating bins...")
-        self.bins = Counter(cell.ingredient for cell in list(
-            chain.from_iterable(self.matrix)))
+        self.bins = Counter(list(chain.from_iterable(self.matrix)))
         logging.info("Bins calculated.")
 
     def map(self):
@@ -195,9 +206,9 @@ class Pizza:
 
         for j, row in enumerate(self.matrix):
             for i, cell in enumerate(row):
-                if cell.ingredient == hill_ingredient:
+                if cell == hill_ingredient:
                     self.hills.append([j, i])
-                elif cell.ingredient == valley_ingredient:
+                elif cell == valley_ingredient:
                     self.valleys.append([j, i])
 
         logging.info("Topography calculated.")
@@ -206,28 +217,53 @@ class Pizza:
         self.slices.append(Slice(y1, x1, y2, x2))
 
 
+def next_coords(slice):
+
+    left_array = []
+    for i in range(slice.y1, slice.y2):
+        left_array.append([i, slice.x1 - 1])
+
+    up_array = []
+    for i in range(slice.x1, slice.x2):
+        up_array.append([slice.y1 - 1, i])
+
+    right_array = []
+    for i in range(slice.y1, slice.y2):
+        right_array.append([i, slice.x2])
+
+    down_array = []
+    for i in range(slice.x1, slice.x2):
+        down_array.append([slice.y2, i])
+
+    return [left_array, up_array, right_array, down_array]
+
+
 if __name__ == "__main__":
-    slice = ""
 
-    if len(sys.argv) not in [2, 3]:
-        logging.error(
-            "Usage: python program.py [input file] [verbosity=WARNING]")
+    logging.basicConfig(level=logging.DEBUG)
 
-    if sys.argv[2] == "DEBUG":
-        level = logging.DEBUG
-    elif sys.argv[2] == "INFO":
-        level = logging.INFO
-    elif sys.argv[2] == "WARNING":
-        level = logging.WARNING
-    elif sys.argv[2] == "ERROR":
-        level = logging.ERROR
-    elif sys.argv[2] == "CRITICAL":
-        level = logging.CRITICAL
-
-    logging.basicConfig(level=level)
-
-    pizza = Pizza(sys.argv[1])
+    pizza = Pizza("small.in")
     pizza.map()
+
+    center_index = math.floor(len(pizza.hills) / 2)
+    y, x = pizza.hills[center_index]
+
+    current_slice = Slice(y, x, y + 1, x + 1)
+    print(current_slice)
+
+    print(next_coords(current_slice))
+
+    left_coords = [y, x - 1]
+    print(pizza.matrix[y][x - 1])
+
+    for i in range(0, len(pizza.hills) - 1):
+        if i % 2:
+            pizza.hills[center_index + math.floor(i / 2) + 1]
+            print(center_index + math.floor(i / 2) + 1)
+        else:
+            pizza.hills[center_index - math.floor(i / 2) - 1]
+            print(center_index - math.floor(i / 2) - 1)
+
     pizza.output()
     pizza.mvp()
     pizza.validate_slices()
