@@ -3,6 +3,7 @@ from itertools import chain
 import logging
 import sys
 
+
 class Slice:
 
     y1, x1, y2, x2 = (None, None, None, None)
@@ -52,6 +53,12 @@ class Slice:
         self.set_y2(y2)
         self.set_x2(x2)
 
+    def location_in_slice(self, y, x):
+        return (self.y1 <= y <= self.y2 and self.x1 <= x <= self.x2)
+
+    def size(self):
+        return (self.y2 - self.y1 + 1) * (self.x2 - self.x1 + 1)
+
 
 class Cell:
 
@@ -78,9 +85,53 @@ class Pizza:
         with open(file_name, 'r') as f:
             r, c, self.l, self.h = list(map(int, f.readline().split(" ")))
             for j, line in enumerate(f):
-                self.matrix.append([Cell(ingredient) for ingredient in list(line)[:-1]])
+                self.matrix.append([Cell(ingredient)
+                                    for ingredient in list(line)[:-1]])
 
         logging.info("Loaded.")
+
+    def mvp(self):
+
+        minimum_ingredient = min(self.bins)
+
+        for j, line in enumerate(self.matrix):
+            for i, cell in enumerate(line):
+                if cell.ingredient == minimum_ingredient:
+                    pass
+
+        self.slice(1, 1, 2, 3)
+
+    def validate_slices(self):
+
+        for slice in self.slices:
+            if slice.size() > self.h:
+                logging.critical("Slice is too large.")
+
+            if slice.size() < self.l:
+                logging.critical("Slice is too small.")
+
+        for slice in self.slices:
+            for j, line in enumerate(self.matrix):
+                for i, cell in enumerate(line):
+                    slice_cells = []
+                    if slice.location_in_slice(j, i):
+                        slice_cells.append(cell)
+
+                    got_tomato = False
+                    got_mushroom = False
+
+                    for cell in slice_cells:
+                        if cell.ingredient == "T":
+                            got_tomato = True
+                        elif cell.ingredient == "M":
+                            got_mushroom = True
+
+                    if False in [got_tomato, got_mushroom]:
+                        logging.critical(
+                            "Slice doesn't have both ingredients.")
+
+            # print(self.matrix[slice.y1][slice.x1].ingredient)
+            # print(self.matrix[slice.y2][slice.x2].ingredient)
 
     def output(self, display_slices=True, display_bins=True, display_hills=True, display_valleys=False):
         logging.info("Generating output...")
@@ -129,7 +180,8 @@ class Pizza:
 
     def bin_count(self):
         logging.info("Calculating bins...")
-        self.bins = Counter(cell.ingredient for cell in list(chain.from_iterable(self.matrix)))
+        self.bins = Counter(cell.ingredient for cell in list(
+            chain.from_iterable(self.matrix)))
         logging.info("Bins calculated.")
 
     def map(self):
@@ -150,14 +202,16 @@ class Pizza:
 
         logging.info("Topography calculated.")
 
-
     def slice(self, y1, x1, y2, x2):
         self.slices.append(Slice(y1, x1, y2, x2))
 
 
 if __name__ == "__main__":
+    slice = ""
+
     if len(sys.argv) not in [2, 3]:
-        logging.error("Usage: python program.py [input file] [verbosity=WARNING]")
+        logging.error(
+            "Usage: python program.py [input file] [verbosity=WARNING]")
 
     if sys.argv[2] == "DEBUG":
         level = logging.DEBUG
@@ -175,3 +229,5 @@ if __name__ == "__main__":
     pizza = Pizza(sys.argv[1])
     pizza.map()
     pizza.output()
+    pizza.mvp()
+    pizza.validate_slices()
