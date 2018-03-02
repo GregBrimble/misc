@@ -59,8 +59,8 @@ def step(rides, cars, timeStep, submissions):
     distances = {}
 
     for ride in rides:
-        if ride.done or ride.started_at:
-            continue
+        if ride.done:
+            break
 
         for car in cars:
             if car.ride:
@@ -72,20 +72,17 @@ def step(rides, cars, timeStep, submissions):
 
         if ride.latest_finish < (timeStep + ride.distance() + distances[nearest_car]):
             ride.done = True
-            continue
+            break
 
-        if ride.earliest_start > timeStep:
-            continue
 
-        if not nearest_car.ride:
-            nearest_car.assign_ride(timeStep, ride, distances[nearest_car])
-            continue
+        nearest_car.assign_ride(timeStep, ride, distances[nearest_car])
+
 
     for i, car in enumerate(cars):
         if car.remaining_distance(timeStep) == 0 and car.ride:
             car.position = car.ride.finish
-            submissions[car].append(car.ride)
             car.ride = None
+            submissions[car].append(ride)
 
 
 if __name__ == "__main__":
@@ -93,7 +90,7 @@ if __name__ == "__main__":
     rides = []
     cars = []
     submission = {}
-    with open("e_high_bonus.in") as f:
+    with open("a_example.in") as f:
         R, C, F, N, B, T = list(map(int, f.readline().split(" ")))
         for j, line in enumerate(f):
             rides.append(Ride(*map(int, line.rstrip().split(" "))))
@@ -104,11 +101,13 @@ if __name__ == "__main__":
     for car in cars:
         submission[car] = []
 
-    for timeStep in xrange(T):
-        step(rides, cars, timeStep, submission)
-        print("Time step", timeStep)
+    for i in xrange(T):
+        step(rides, cars, i, submission)
+        print("Time step: {i}".format(i=i))
+        for j, car in enumerate(cars):
+            try:
+                print(car.ride)
+            except AttributeError:
+                pass
 
     print(submission)
-
-    for car in cars:
-        print("{length} {rides}".format(length=len(submission[car]), rides=" ".join((str(rides.index(ride)) for ride in submission[car]))))
